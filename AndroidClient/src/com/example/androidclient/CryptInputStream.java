@@ -30,18 +30,12 @@ public class CryptInputStream {
 	private SecretKeySpec skeySpec;
 	private Cipher cipher;
 	private Integer headerSize;
-	
 	private byte[] IV;
 	MessageDigest md;
-	
 	private AlgorithmParameterSpec IVSpec;
-	
-	byte[] buf;
-	int bufSize;
-	int bufferedSize;
-	int transferredBytes;
-	int totalSize, alignSize;
-	byte[] header; 
+	private byte[] buf;
+	private int bufSize, bufferedSize, transferredBytes, totalSize, alignSize;
+	private byte[] header; 
 	
 	public CryptInputStream(Socket socket) {
 		this.socket = socket;
@@ -89,7 +83,6 @@ public class CryptInputStream {
  		
  		if (bufferedSize == 0) {
  			/* receive header */
- 			
  	 		ret = inputStream.read(header, 0, headerSize);
  	 		if (ret == -1)
  	 			return ret;
@@ -97,7 +90,6 @@ public class CryptInputStream {
  	 			Log.e("error reading header", ret.toString());
  	 			throw new IOException();
  	 		}
- 	 		
  	 		decoded = new String(header, "UTF-8");
 	 	    scanner = new Scanner(decoded);
  	 		/* get total size and align size*/
@@ -109,7 +101,6 @@ public class CryptInputStream {
  	 	 		e.printStackTrace();
  	 	 	}
  	 		scanner.close();
- 	 		
  	 		/* adjust receive buffer */
  	 		if ((bufSize == 0) || (bufSize < totalSize)) {
  	 			buf = new byte[totalSize];
@@ -145,7 +136,6 @@ public class CryptInputStream {
  			bufferedSize -= len;
  			transferredBytes += len;
  			ret = len;
- 	 		
  		}
  		else {
  			System.arraycopy(buf, transferredBytes, b, 0, bufferedSize);
@@ -153,7 +143,6 @@ public class CryptInputStream {
  			bufferedSize = 0;
  			transferredBytes = 0;
  		}
- 		
  		return ret;
  	}
  	

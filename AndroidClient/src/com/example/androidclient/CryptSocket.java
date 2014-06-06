@@ -17,7 +17,7 @@ import android.util.Log;
 
 public class CryptSocket extends Socket {
 	private BigInteger P, G, X, b, y, k_b;
-	private String decoded, pStr, gStr, xStr, yStr;
+	private String decoded, yStr;
 	private CryptInputStream is;
 	private CryptOutputStream os;
 	private OutputStream osOriginal;
@@ -43,7 +43,6 @@ public class CryptSocket extends Socket {
 		}
         decoded = new String(buffer, 0, bytesRead -1, "UTF-8");
         P = new BigInteger(decoded, 16);
-        pStr = P.toString(16);
 		
 		/* get G parameter */	
 		bytesRead = is.readClear(buffer, 0, 3);
@@ -57,8 +56,7 @@ public class CryptSocket extends Socket {
 		}
         String decoded = new String(buffer, 0, bytesRead -1, "UTF-8");
         G = new BigInteger(decoded, 16);
-        gStr = G.toString(16);
-        
+     
         /* get X parameter */	
 		bytesRead = is.readClear(buffer, 0, 513);
 		if (bytesRead == -1) {
@@ -71,7 +69,6 @@ public class CryptSocket extends Socket {
 		}
         decoded = new String(buffer, 0, bytesRead -1, "UTF-8");
         X = new BigInteger(decoded, 16);
-        xStr = X.toString(16);
         
         /* generate big random value < p -1 */
         b = nextRandomBigInteger(P);

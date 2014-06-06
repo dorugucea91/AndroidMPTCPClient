@@ -15,7 +15,6 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
-import android.annotation.SuppressLint;
 import android.util.Log;
 
 public class CryptOutputStream {
@@ -23,19 +22,11 @@ public class CryptOutputStream {
 	private OutputStream outputStream;
 	private BigInteger dhmKey;
 	private Cipher cipher;
-	
-	MessageDigest md;
-	
-	int newSize, alignSize, totalSize, headerSize;
-	byte[] header; 
-	byte[] buf;
-	byte[] payloadBuf;
-	int payloadSize;
-	int bufSize;
-	int transferred;
-	byte[] md5;
-	
-	int TOTAL_SIZE, ALIGN_SIZE, MD5_SIZE;
+	private MessageDigest md;
+	private int newSize, alignSize, totalSize, 
+			headerSize, payloadSize, transferred, bufSize;
+	private byte[] header, buf, payloadBuf, md5; 
+	private int TOTAL_SIZE, ALIGN_SIZE, MD5_SIZE;
 	
 	public CryptOutputStream(Socket socket) {
 		this.socket = socket;
@@ -62,6 +53,7 @@ public class CryptOutputStream {
 	}
 	
 	public int write(byte[] b, int off, int len) throws IOException {
+		/* make len divisible by 16 for AES */
 		if ((len % 16) != 0) {
 			newSize = roundUp(len, 16);
 			alignSize = newSize - len;
@@ -88,6 +80,7 @@ public class CryptOutputStream {
 		/* get sizes */
 		String sizes = String.format("%d %d", newSize, alignSize);
 		byte[] sizesByte = sizes.getBytes();
+		/* encrypt data */
 		try {
 			payloadBuf = cipher.doFinal(payloadBuf);
 		} catch (BadPaddingException e) {
@@ -100,11 +93,12 @@ public class CryptOutputStream {
 				throw new IOException();
 	 	}
 		
-
-		/* transfer to final array */
+		/* transfer data */
 		System.arraycopy(payloadBuf, 0,
 				buf, TOTAL_SIZE + ALIGN_SIZE + MD5_SIZE, newSize);
+		/* transfer md5 */
 		System.arraycopy(md5, 0, buf, TOTAL_SIZE + ALIGN_SIZE, 16);
+		/* transfer sizes */
 		System.arraycopy(sizesByte, 0, buf, 0, sizesByte.length);
 		
 		/* send data */

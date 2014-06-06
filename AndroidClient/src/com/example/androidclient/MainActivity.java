@@ -21,12 +21,12 @@ import android.widget.TextView;
 
 public class MainActivity extends Activity {
 	
-	TextView textResponse;
-	EditText editTextAddress, editTextPort; 
-	Button buttonConnect, buttonDisconnect, buttonDownload, buttonUpload;
-	CryptSocket clientSocket;
-	CryptInputStream is;
-	CryptOutputStream os;
+	private TextView textResponse;
+	private EditText editTextAddress, editTextPort; 
+	private Button buttonConnect, buttonDisconnect, buttonDownload, buttonUpload;
+	private CryptSocket clientSocket;
+	private CryptInputStream is;
+	private CryptOutputStream os;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -49,20 +49,21 @@ public class MainActivity extends Activity {
 		buttonDisconnect.setEnabled(false);
 		buttonDownload.setEnabled(false);
 		buttonUpload.setEnabled(false);
-		
 	}
 	
 	OnClickListener buttonConnectOnClickListener = 
 			new OnClickListener() {
+				Integer port;
+				String dstAddress;
+				
 				@Override
 				public void onClick(View arg0) {
-					String dstAddress = editTextAddress.getText().toString();
+					dstAddress = editTextAddress.getText().toString();
 					if (dstAddress.length() == 0) {
 						textResponse.setText("Invalid IP Address");
 						return;
 					}
 					
-					Integer port;
 					try {
 						port = Integer.parseInt(editTextPort.getText().toString());
 					} catch (NumberFormatException e) {
@@ -136,12 +137,10 @@ public class MainActivity extends Activity {
 	}
 	
 	public class DownloadFile extends AsyncTask<Void, Integer, Void> {
-
-		String response;
-		byte[] decrypted = new byte[4096];	
-		int bytesRead;
-		
-		byte start[] = new byte[1];
+		private String response;
+		private byte[] decrypted = new byte[4096];	
+		private int bytesRead;
+		private byte start[] = new byte[1];
 		
 		@Override
 		protected Void doInBackground(Void... arg0) {
@@ -154,7 +153,6 @@ public class MainActivity extends Activity {
 					while ((bytesRead = is.read(decrypted, 0, 4096)) != -1) {
 						String decoded = new String(decrypted, 0, bytesRead);
 						writeToFile(decoded);
-						
 					}
 					response = "Download finished.";
 					publishProgress(3);
@@ -165,7 +163,7 @@ public class MainActivity extends Activity {
 				} catch (IOException e) {
 					e.printStackTrace();
 					response = "IOException: " + e.toString();
-					publishProgress();
+					publishProgress(0);
 				} catch (Exception e) {
 					e.printStackTrace();
 					response = "Exception: " + e.toString();
@@ -174,14 +172,13 @@ public class MainActivity extends Activity {
 			}
 			else {
 				response = "Socket is closed";
-				publishProgress();
+				publishProgress(0);
 			}
 			return null;
 		}
 		
 		@Override
 		 protected void onProgressUpdate(Integer... progress) { 
-			
 			if (progress[0].intValue() == 1) {
 				textResponse.setText(response);
 				buttonDownload.setEnabled(false);
@@ -205,7 +202,8 @@ public class MainActivity extends Activity {
 		
 		private void clearContent() {
 			try {
-		        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("config.txt", Context.MODE_PRIVATE));
+		        OutputStreamWriter outputStreamWriter = 
+		        		new OutputStreamWriter(openFileOutput("config.txt", Context.MODE_PRIVATE));
 		        outputStreamWriter.close();
 		    }
 		    catch (IOException e) {
@@ -215,7 +213,8 @@ public class MainActivity extends Activity {
 		
 		private void writeToFile(String data) {
 		    try {
-		        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput("config.txt", Context.MODE_APPEND));
+		        OutputStreamWriter outputStreamWriter = 
+		        		new OutputStreamWriter(openFileOutput("config.txt", Context.MODE_APPEND));
 		        outputStreamWriter.write(data);
 		        outputStreamWriter.close();
 		    }
@@ -223,12 +222,10 @@ public class MainActivity extends Activity {
 		        Log.e("Exception", "File write failed: " + e.toString());
 		    } 
 		}
-		
-		
 	}
 	
 	public class UploadFile extends AsyncTask<Void, Integer, Void> {
-		String response;
+		private String response;
 		
 		@Override
 		protected Void doInBackground(Void... arg0) {
@@ -258,14 +255,12 @@ public class MainActivity extends Activity {
 		
 		@Override
 		 protected void onProgressUpdate(Integer... progress) { 
-			
 			if (progress[0].intValue() == 1) {
 				textResponse.setText(response);
 				buttonDownload.setEnabled(false);
 				buttonDisconnect.setEnabled(false);
 				buttonConnect.setEnabled(false);
 				buttonUpload.setEnabled(false);
-				
 			}
 			else if (progress[0].intValue() == 0){
 				textResponse.setText(response);
@@ -288,11 +283,8 @@ public class MainActivity extends Activity {
 			byte[] buf = new byte[20];
 		    String ret = "";
 		    int bytesRead;
-		    	
 		    try {
 		        InputStream inputStream = openFileInput("config.txt");
-		        
-		        
 		        if ( inputStream != null ) {
 		            while ( (bytesRead = inputStream.read(buf, 0, 20)) != -1) {
 		            	os.write(buf, 0, bytesRead);
@@ -307,15 +299,12 @@ public class MainActivity extends Activity {
 		}
 	}
 	
-
 	public class MyClientTask extends AsyncTask<Void, Integer, Void> {
+		private String dstAddress;
+		private int dstPort;
+		private String response = "";
 		
-		String dstAddress;
-		int dstPort;
-		String response = "";
-		Integer bytesRead;
-		
-		MyClientTask(String addr, int port){
+		public MyClientTask(String addr, int port){
 			dstAddress = addr;
 			dstPort = port;
 		}
@@ -374,8 +363,7 @@ public class MainActivity extends Activity {
 				buttonDownload.setEnabled(true);
 				buttonDisconnect.setEnabled(true);
 				buttonConnect.setEnabled(true);
-			}
-			
+			}	
 			super.onProgressUpdate(progress);
 		 }
 	}
