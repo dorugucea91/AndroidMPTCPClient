@@ -9,11 +9,14 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+
 import android.util.Log;
 
 public class CryptOutputStream {
@@ -74,6 +77,8 @@ public class CryptOutputStream {
 			payloadSize = newSize;
 		}
 		
+		Arrays.fill(buf, (byte)0x00);
+		Arrays.fill(payloadBuf, (byte)0x00);
 		System.arraycopy(b, 0, payloadBuf, 0, len);
 		
 		/* get crc */

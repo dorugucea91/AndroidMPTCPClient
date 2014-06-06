@@ -283,13 +283,13 @@ public class MainActivity extends Activity {
 		 }
 		
 		private String sendFile(CryptOutputStream os) throws IOException {
-			byte[] buf = new byte[20];
+			byte[] buf = new byte[4096];
 		    String ret = "";
 		    int bytesRead;
 		    try {
 		        InputStream inputStream = openFileInput("config.txt");
 		        if ( inputStream != null ) {
-		            while ( (bytesRead = inputStream.read(buf, 0, 20)) != -1) {
+		            while ( (bytesRead = inputStream.read(buf, 0, 4096)) != -1) {
 		            	os.write(buf, 0, bytesRead);
 		            }
 		            inputStream.close();

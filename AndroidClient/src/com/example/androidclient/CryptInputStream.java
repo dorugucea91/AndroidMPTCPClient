@@ -81,7 +81,6 @@ public class CryptInputStream {
  		Integer ret;
  		String decoded;
  		Scanner scanner = null;
- 		
  		if (bufferedSize == 0) {
  			/* receive header */
  	 		ret = inputStream.read(header, 0, headerSize);
