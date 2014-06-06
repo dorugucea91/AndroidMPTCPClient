@@ -1,4 +1,4 @@
-package com.example.androidclient;
+
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -47,7 +47,9 @@ public class CryptOutputStream {
 		this.outputStream = socket.getOutputStream();
 	}
 	
-	public void initAES(SecretKeySpec skeySpec, AlgorithmParameterSpec IV) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException, InvalidAlgorithmParameterException {
+	public void initAES(SecretKeySpec skeySpec, AlgorithmParameterSpec IV) throws 
+			NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
+			UnsupportedEncodingException, InvalidAlgorithmParameterException {
 		cipher = Cipher.getInstance("AES/CBC/NOPADDING");
         cipher.init(Cipher.ENCRYPT_MODE, skeySpec, IV);
 	}

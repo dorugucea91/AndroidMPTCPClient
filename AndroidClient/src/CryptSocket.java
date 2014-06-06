@@ -1,4 +1,4 @@
-package com.example.androidclient;
+
 
 import java.io.IOException;
 import java.io.OutputStream;

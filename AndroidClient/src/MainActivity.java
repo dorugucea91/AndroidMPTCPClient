@@ -1,4 +1,4 @@
-package com.example.androidclient;
+
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,6 +7,10 @@ import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+
+import com.example.androidclient.R;
+import com.example.androidclient.R.id;
+import com.example.androidclient.R.layout;
 
 import android.os.AsyncTask;
 import android.os.Bundle;

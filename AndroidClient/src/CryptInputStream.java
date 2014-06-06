@@ -1,4 +1,4 @@
-package com.example.androidclient;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +48,9 @@ public class CryptInputStream {
 		md = MessageDigest.getInstance("MD5");
 	}
 	
-	public void initAES() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, UnsupportedEncodingException, InvalidAlgorithmParameterException {
+	public void initAES() throws 
+		NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
+		UnsupportedEncodingException, InvalidAlgorithmParameterException {
 		byte[] key = dhmKey.toByteArray();
 		byte[] cleanKey = new byte[256];
 		byte[] aesKey = new byte[32];
