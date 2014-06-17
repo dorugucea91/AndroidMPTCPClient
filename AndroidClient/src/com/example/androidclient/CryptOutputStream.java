@@ -15,33 +15,29 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
-
-import android.util.Log;
 
 public class CryptOutputStream {
 	private Socket socket;
 	private OutputStream outputStream;
-	private BigInteger dhmKey;
 	private Cipher cipher;
 	private MessageDigest md;
-	private int newSize, alignSize, totalSize, 
-			headerSize, payloadSize, transferred, bufSize;
-	private byte[] header, buf, payloadBuf, md5; 
-	private int TOTAL_SIZE, ALIGN_SIZE, MD5_SIZE;
+	private byte[] buf, sizesByte;
+	private int newSize, alignSize, totalSize, bufSize;
+	private int PAYLOAD_SIZE, ALIGN_SIZE, MD5_SIZE, FLAG_SIZE, MD5_OFFSET_M, 
+				newBufferedSize , bufferedSize, modifiedLen, offset, sendSize;
 	
 	public CryptOutputStream(Socket socket) {
 		this.socket = socket;
-		headerSize = 32;
-		header = new byte[headerSize];
-		md5 = new byte[16];
-		TOTAL_SIZE = 8;
+		PAYLOAD_SIZE = 8;
 		ALIGN_SIZE = 8;
 		MD5_SIZE = 16;
+		FLAG_SIZE = 1;
+		MD5_OFFSET_M = FLAG_SIZE + PAYLOAD_SIZE + ALIGN_SIZE + MD5_SIZE;
 	}
 	
 	public void setDhmKey(BigInteger key) throws NoSuchAlgorithmException {
-		this.dhmKey = key;
 		md = MessageDigest.getInstance("MD5");
 	}
 	
@@ -57,6 +53,8 @@ public class CryptOutputStream {
 	}
 	
 	public int write(byte[] b, int off, int len) throws IOException {
+		int smaller_buf = 0;
+		
 		/* make len divisible by 16 for AES */
 		if ((len % 16) != 0) {
 			newSize = roundUp(len, 16);
@@ -67,49 +65,54 @@ public class CryptOutputStream {
 			alignSize = 0;
 		}
 		
-		totalSize = newSize + TOTAL_SIZE + ALIGN_SIZE + MD5_SIZE;
-		if ((bufSize == 0) || (bufSize < totalSize)) {
+		newBufferedSize = newSize - alignSize;
+		modifiedLen = 0;
+		if (bufSize == 0 || (bufferedSize != newBufferedSize)) {
+			modifiedLen = 1;
+			if ((bufSize != 0) && (newBufferedSize < bufferedSize))
+				smaller_buf = 1;
+			totalSize = MD5_OFFSET_M + newSize;
 			buf = new byte[totalSize];
 			bufSize = totalSize;
-		}
-		if ((payloadSize == 0) || (payloadSize != newSize)) {
-			payloadBuf = new byte[newSize];
-			payloadSize = newSize;
+			bufferedSize = newBufferedSize;
 		}
 		
-		Arrays.fill(buf, (byte)0x00);
-		Arrays.fill(payloadBuf, (byte)0x00);
-		System.arraycopy(b, 0, payloadBuf, 0, len);
+		totalSize = bufSize;
+
+		Arrays.fill(buf, (byte)0x00);		
+		if (modifiedLen == 0) {
+			offset = FLAG_SIZE + MD5_SIZE;
+			buf[0] = 0x30;
+			sendSize = totalSize - PAYLOAD_SIZE - ALIGN_SIZE;
+		}
+		else {
+			offset = MD5_OFFSET_M;
+			String sizes = String.format("%d%d %d", 1, newSize, alignSize);
+			sizesByte = sizes.getBytes();
+			System.arraycopy(sizesByte, 0, buf, 0, sizesByte.length);
+			sendSize = totalSize;
+		}
 		
-		/* get crc */
-		md5 = md.digest(payloadBuf);
-		/* get sizes */
-		String sizes = String.format("%d %d", newSize, alignSize);
-		byte[] sizesByte = sizes.getBytes();
-		/* encrypt data */
+		System.arraycopy(b, 0, buf, offset, len);
+		md.update(buf, offset, newSize);
+		System.arraycopy(md.digest(), 0, buf, offset - MD5_SIZE, MD5_SIZE);
+		
 		try {
-			payloadBuf = cipher.doFinal(payloadBuf);
+			cipher.doFinal(buf, offset, newSize, buf, offset);
+		} catch (ShortBufferException e) {
+			e.printStackTrace();
+			throw new IOException();
+		} catch (IllegalBlockSizeException e) {
+			e.printStackTrace();
+			throw new IOException();
 		} catch (BadPaddingException e) {
-	 			Log.e("decrypt", "Bad Padding");
-				e.printStackTrace();
-				throw new IOException();
-	 	} catch (IllegalBlockSizeException e) {
-	 			Log.e("decrypt", "Illegal Block");
-				e.printStackTrace();
-				throw new IOException();
-	 	}
+			e.printStackTrace();
+			throw new IOException();
+		}
 		
-		/* transfer data */
-		System.arraycopy(payloadBuf, 0,
-				buf, TOTAL_SIZE + ALIGN_SIZE + MD5_SIZE, newSize);
-		/* transfer md5 */
-		System.arraycopy(md5, 0, buf, TOTAL_SIZE + ALIGN_SIZE, 16);
-		/* transfer sizes */
-		System.arraycopy(sizesByte, 0, buf, 0, sizesByte.length);
-		
-		/* send data */
-		outputStream.write(buf, 0, totalSize);
-		
+		outputStream.write(buf, 0, sendSize);
+		if (smaller_buf == 1) 
+			socket.getInputStream().read();
 		return len;
 	}
 	
@@ -121,7 +124,6 @@ public class CryptOutputStream {
 		if(multiple == 0) { 
 	  		return numToRound; 
 	 	} 
-
 	 	int remainder = numToRound % multiple;
 	 	if (remainder == 0)
 	  		return numToRound;

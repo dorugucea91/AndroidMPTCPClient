@@ -31,12 +31,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/button_connect"/>
-
-    <Button
-        android:id="@+id/disconnect"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/button_disconnect" />
     
      <Button
         android:id="@+id/download"

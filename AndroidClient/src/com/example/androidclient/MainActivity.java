@@ -8,8 +8,6 @@ import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
 import com.example.androidclient.R;
-import com.example.androidclient.R.id;
-import com.example.androidclient.R.layout;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -26,7 +24,7 @@ public class MainActivity extends Activity {
 	
 	private TextView textResponse;
 	private EditText editTextAddress, editTextPort; 
-	private Button buttonConnect, buttonDisconnect, buttonDownload, buttonUpload;
+	private Button buttonConnect, buttonDownload, buttonUpload;
 	private CryptSocket clientSocket;
 	private CryptInputStream is;
 	private CryptOutputStream os;
@@ -39,17 +37,14 @@ public class MainActivity extends Activity {
 		editTextAddress = (EditText)findViewById(R.id.address);
 		editTextPort = (EditText)findViewById(R.id.port);
 		buttonConnect = (Button)findViewById(R.id.connect);
-		buttonDisconnect = (Button)findViewById(R.id.disconnect);
 		buttonDownload = (Button)findViewById(R.id.download);
 		buttonUpload = (Button)findViewById(R.id.upload);
 		textResponse = (TextView)findViewById(R.id.response);
 		
 		buttonConnect.setOnClickListener(buttonConnectOnClickListener);
-		buttonDisconnect.setOnClickListener(buttonDisconnectOnClickListener);
 		buttonDownload.setOnClickListener(buttonDownloadOnClickListener);
 		buttonUpload.setOnClickListener(buttonUploadOnClickListener);
 		
-		buttonDisconnect.setEnabled(false);
 		buttonDownload.setEnabled(false);
 		buttonUpload.setEnabled(false);
 	}
@@ -75,29 +70,6 @@ public class MainActivity extends Activity {
 					}
 					MyClientTask myClientTask = new MyClientTask(dstAddress, port);
 					myClientTask.execute();
-				}
-	};
-	
-	OnClickListener buttonDisconnectOnClickListener = 
-			new OnClickListener() {
-				@Override
-				public void onClick(View arg0) {
-					textResponse.setText("");
-					try {
-						freeResources();
-						buttonDownload.setEnabled(false);
-						buttonDisconnect.setEnabled(false);
-						buttonConnect.setEnabled(true);
-						buttonUpload.setEnabled(false);
-						
-					} catch (IOException e) {
-						e.printStackTrace();
-						textResponse.setText("IOException: " + e.toString());
-						buttonDownload.setEnabled(true);
-						buttonDisconnect.setEnabled(true);
-						buttonConnect.setEnabled(true);
-						buttonUpload.setEnabled(true);
-					}
 				}
 	};
 	
@@ -141,9 +113,10 @@ public class MainActivity extends Activity {
 	
 	public class DownloadFile extends AsyncTask<Void, Integer, Void> {
 		private String response;
-		private byte[] decrypted = new byte[4096];	
+		private byte[] decrypted = new byte[10000];	
 		private int bytesRead;
 		private byte start[] = new byte[1];
+		long startTime, stopTime, elapsedTime, start1, start2, writtenTime;
 		
 		@Override
 		protected Void doInBackground(Void... arg0) {
@@ -153,12 +126,20 @@ public class MainActivity extends Activity {
 					clearContent();
 					response = "Downloading...";
 					publishProgress(1);
-					while ((bytesRead = is.read(decrypted, 0, 4096)) != -1) {
-						String decoded = new String(decrypted, 0, bytesRead);
-						writeToFile(decoded);
+					startTime = System.currentTimeMillis();
+					while ((bytesRead = is.read(decrypted, 0, 10000)) != -1) {
+						//start1 = System.currentTimeMillis();
+						//String decoded = new String(decrypted, 0, bytesRead);
+						//writeToFile(decoded);
+						//start2 = System.currentTimeMillis();
+						//writtenTime += (start2 - start1);
 					}
+					stopTime = System.currentTimeMillis();
+				    elapsedTime = stopTime - startTime - writtenTime;
+				    Log.i("elapsed time", Long.valueOf(elapsedTime).toString());
+				    is.close();
 					response = "Download finished.";
-					publishProgress(3);
+					publishProgress(0);
 				} catch (UnknownHostException e) {
 					e.printStackTrace();
 					response = "UnknownHostException: " + e.toString();
@@ -184,21 +165,15 @@ public class MainActivity extends Activity {
 		 protected void onProgressUpdate(Integer... progress) { 
 			if (progress[0].intValue() == 1) {
 				textResponse.setText(response);
-				buttonDownload.setEnabled(false);
-				buttonDisconnect.setEnabled(false);
 				buttonConnect.setEnabled(false);
+				buttonDownload.setEnabled(false);
+				buttonUpload.setEnabled(false);
 			}
 			else if (progress[0].intValue() == 0){
 				textResponse.setText(response);
-				buttonDownload.setEnabled(true);
-				buttonDisconnect.setEnabled(true);
 				buttonConnect.setEnabled(true);
-			}
-			else {
-				textResponse.setText(response);
-				buttonDownload.setEnabled(true);
-				buttonDisconnect.setEnabled(true);
-				buttonConnect.setEnabled(false);
+				buttonDownload.setEnabled(false);
+				buttonUpload.setEnabled(false);
 			}
 			super.onProgressUpdate(progress);
 		 }
@@ -206,7 +181,8 @@ public class MainActivity extends Activity {
 		private void clearContent() {
 			try {
 		        OutputStreamWriter outputStreamWriter = 
-		        		new OutputStreamWriter(openFileOutput("config.txt", Context.MODE_PRIVATE));
+		        		new OutputStreamWriter(
+		        				openFileOutput("config.txt", Context.MODE_PRIVATE));
 		        outputStreamWriter.close();
 		    }
 		    catch (IOException e) {
@@ -217,7 +193,8 @@ public class MainActivity extends Activity {
 		private void writeToFile(String data) {
 		    try {
 		        OutputStreamWriter outputStreamWriter = 
-		        		new OutputStreamWriter(openFileOutput("config.txt", Context.MODE_APPEND));
+		        		new OutputStreamWriter(
+		        				openFileOutput("config.txt", Context.MODE_APPEND));
 		        outputStreamWriter.write(data);
 		        outputStreamWriter.close();
 		    }
@@ -237,8 +214,9 @@ public class MainActivity extends Activity {
 					response = "Uploading...";
 					publishProgress(1);
 					sendFile(os);
+					os.close();
 					response = "Uploaded.";
-					publishProgress(2);
+					publishProgress(0);
 				} catch (IOException e) {
 					e.printStackTrace();
 					response = "IOException: " + e.toString();
@@ -260,38 +238,34 @@ public class MainActivity extends Activity {
 		 protected void onProgressUpdate(Integer... progress) { 
 			if (progress[0].intValue() == 1) {
 				textResponse.setText(response);
-				buttonDownload.setEnabled(false);
-				buttonDisconnect.setEnabled(false);
 				buttonConnect.setEnabled(false);
+				buttonDownload.setEnabled(false);
 				buttonUpload.setEnabled(false);
 			}
-			else if (progress[0].intValue() == 0){
-				textResponse.setText(response);
-				buttonDownload.setEnabled(true);
-				buttonDisconnect.setEnabled(true);
+			else if (progress[0].intValue() == 0) {
 				buttonConnect.setEnabled(true);
-				buttonUpload.setEnabled(true);
-			}
-			else {
 				textResponse.setText(response);
-				buttonDownload.setEnabled(true);
-				buttonDisconnect.setEnabled(true);
-				buttonConnect.setEnabled(false);
-				buttonUpload.setEnabled(true);
+				buttonDownload.setEnabled(false);
+				buttonUpload.setEnabled(false);	
 			}
 			super.onProgressUpdate(progress);
 		 }
 		
 		private String sendFile(CryptOutputStream os) throws IOException {
-			byte[] buf = new byte[4096];
+			long start1, start2, elapsed = 0;
+			byte[] buf = new byte[5000];
 		    String ret = "";
 		    int bytesRead;
 		    try {
-		        InputStream inputStream = openFileInput("config.txt");
+		        InputStream inputStream = openFileInput("test");
 		        if ( inputStream != null ) {
-		            while ( (bytesRead = inputStream.read(buf, 0, 4096)) != -1) {
+		            while ( (bytesRead = inputStream.read(buf, 0, 5000)) != -1) {
+		            	start1 = System.currentTimeMillis();
 		            	os.write(buf, 0, bytesRead);
+		            	start2 = System.currentTimeMillis();
+		            	elapsed += (start2 - start1);
 		            }
+		            Log.i("elapsed", Long.valueOf(elapsed).toString());
 		            inputStream.close();
 		        }
 		    }
@@ -351,20 +325,17 @@ public class MainActivity extends Activity {
 			if (progress[0].intValue() == 1) {
 				textResponse.setText(response);
 				buttonDownload.setEnabled(true);
-				buttonDisconnect.setEnabled(true);
 				buttonConnect.setEnabled(false);
 				buttonUpload.setEnabled(true);
 			}
 			else if (progress[0].intValue() == 2) {
 				textResponse.setText(response);
 				buttonDownload.setEnabled(false);
-				buttonDisconnect.setEnabled(false);
 				buttonConnect.setEnabled(false);
+				buttonUpload.setEnabled(false);
 			}
 			else {
 				textResponse.setText(response);
-				buttonDownload.setEnabled(true);
-				buttonDisconnect.setEnabled(true);
 				buttonConnect.setEnabled(true);
 			}	
 			super.onProgressUpdate(progress);
