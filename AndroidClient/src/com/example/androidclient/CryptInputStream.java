@@ -221,7 +221,7 @@ public class CryptInputStream {
 			if ((checkLast == 1) && (ret > (FLAG_SIZE + PAYLOAD_SIZE))) {
 				if (b[0] == 0x31) {
 					String decoded = new String(Arrays.copyOfRange(b, FLAG_SIZE, 
-						FLAG_SIZE + PAYLOAD_SIZE), "UTF-8");
+					FLAG_SIZE + PAYLOAD_SIZE), "UTF-8");
 					scanner = new Scanner(decoded);
 					try {
 						realSize = scanner.nextInt();
