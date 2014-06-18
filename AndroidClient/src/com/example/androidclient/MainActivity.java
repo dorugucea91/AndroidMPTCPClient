@@ -289,11 +289,15 @@ public class MainActivity extends Activity {
 		@Override
 		protected Void doInBackground(Void... arg0) {
 			SocketAddress serverAddress = new InetSocketAddress(dstAddress, dstPort);		
-			clientSocket  = new CryptSocket();	
+			clientSocket  = new CryptSocket();
+			long start, finish;
 			try {
 				response = "Connecting to server...";
 				publishProgress(2);
+				start = System.currentTimeMillis();
 				clientSocket.connect(serverAddress);
+				finish = System.currentTimeMillis();
+				Log.i("connection time", Long.valueOf(finish-start).toString());
 				is = clientSocket.getCryptInputStream();
 				os = clientSocket.getCryptOutputStream();
 				response = "Connected to server.";

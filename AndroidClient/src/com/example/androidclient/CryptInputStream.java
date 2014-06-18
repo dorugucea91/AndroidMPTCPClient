@@ -103,7 +103,7 @@ public class CryptInputStream {
 				if (ret < 0)
 					return ret;
 				System.arraycopy(headerModified, MD5_OFFSET_M - MD5_SIZE,
-												md5Header, 0, MD5_SIZE);
+								md5Header, 0, MD5_SIZE);
 				setPayloadAlignSize(headerModified);
 				offset = 0;
 				buf = new byte[payloadSize + headerCleanSize];
@@ -139,13 +139,13 @@ public class CryptInputStream {
 						bufSize = payloadSize + headerCleanSize;
 						buf = new byte[bufSize];
 						System.arraycopy(tempBuf, MD5_OFFSET_M - MD5_SIZE , 
-													md5Header, 0, MD5_SIZE);
+										md5Header, 0, MD5_SIZE);
 						System.arraycopy(tempBuf, MD5_OFFSET_M, buf, 
-											FLAG_SIZE + MD5_SIZE, newPayloadSize);
+										FLAG_SIZE + MD5_SIZE, newPayloadSize);
 					}
 					else {
 						System.arraycopy(buf, MD5_OFFSET_M - MD5_SIZE, 
-													md5Header, 0, MD5_SIZE);
+										md5Header, 0, MD5_SIZE);
 						offset = MD5_OFFSET_M;
 					}
 				}
@@ -189,7 +189,7 @@ public class CryptInputStream {
 	
 	private void setPayloadAlignSize(byte[] headerModified) throws IOException { 
 		String decoded = new String(Arrays.copyOfRange(headerModified, FLAG_SIZE, 
-													headerModifiedSize), "UTF-8");
+											headerModifiedSize), "UTF-8");
 		scanner = new Scanner(decoded);
 		/* get total size and align size */
 		try {
@@ -221,7 +221,7 @@ public class CryptInputStream {
 			if ((checkLast == 1) && (ret > (FLAG_SIZE + PAYLOAD_SIZE))) {
 				if (b[0] == 0x31) {
 					String decoded = new String(Arrays.copyOfRange(b, FLAG_SIZE, 
-					FLAG_SIZE + PAYLOAD_SIZE), "UTF-8");
+							FLAG_SIZE + PAYLOAD_SIZE), "UTF-8");
 					scanner = new Scanner(decoded);
 					try {
 						realSize = scanner.nextInt();
