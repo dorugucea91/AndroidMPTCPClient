@@ -2,8 +2,10 @@ package com.example.androidclient;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
@@ -113,7 +115,7 @@ public class MainActivity extends Activity {
 	
 	public class DownloadFile extends AsyncTask<Void, Integer, Void> {
 		private String response;
-		private byte[] decrypted = new byte[10000];	
+		private byte[] decrypted = new byte[8192];	
 		private int bytesRead;
 		private byte start[] = new byte[1];
 		long startTime, stopTime, elapsedTime, start1, start2, writtenTime;
@@ -127,7 +129,7 @@ public class MainActivity extends Activity {
 					response = "Downloading...";
 					publishProgress(1);
 					startTime = System.currentTimeMillis();
-					while ((bytesRead = is.read(decrypted, 0, 10000)) != -1) {
+					while ((bytesRead = is.read(decrypted, 0, 8192)) != -1) {
 						//start1 = System.currentTimeMillis();
 						//String decoded = new String(decrypted, 0, bytesRead);
 						//writeToFile(decoded);
@@ -138,6 +140,7 @@ public class MainActivity extends Activity {
 				    elapsedTime = stopTime - startTime - writtenTime;
 				    Log.i("elapsed time", Long.valueOf(elapsedTime).toString());
 				    is.close();
+				    is.disp();
 					response = "Download finished.";
 					publishProgress(0);
 				} catch (UnknownHostException e) {

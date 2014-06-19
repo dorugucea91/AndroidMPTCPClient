@@ -45,14 +45,10 @@ public class CryptSocket extends Socket {
 		finish = System.currentTimeMillis();
 		Log.i("receive P time: ", Long.valueOf(finish - start).toString());
 		
-		start = System.currentTimeMillis();
         decoded = new String(buffer, 0, bytesRead -1, "UTF-8");
         P = new BigInteger(decoded, 16);
-        finish = System.currentTimeMillis();
-        Log.i("decode P time: ", Long.valueOf(finish - start).toString());
 		
 		/* get G parameter */
-        start = System.currentTimeMillis();
 		bytesRead = is.readClear(buffer, 0, 3);
 		if (bytesRead == -1) {
 			Log.e("error reading ", bytesRead.toString());
@@ -62,16 +58,11 @@ public class CryptSocket extends Socket {
 			Log.e("G paramter, length", bytesRead.toString());
 			throw new IOException();
 		}
-		finish = System.currentTimeMillis();
-        Log.i("receive G time: ", Long.valueOf(finish - start).toString());
-        start = System.currentTimeMillis();
+	
         String decoded = new String(buffer, 0, bytesRead -1, "UTF-8");
         G = new BigInteger(decoded, 16);
-        finish = System.currentTimeMillis();
-        Log.i("decode G time: ", Long.valueOf(finish - start).toString());
      
         /* get X parameter */	
-        start = System.currentTimeMillis();
 		bytesRead = is.readClear(buffer, 0, 513);
 		if (bytesRead == -1) {
 			Log.e("error reading ", bytesRead.toString());
@@ -81,19 +72,12 @@ public class CryptSocket extends Socket {
 			Log.e("X paramter, length", bytesRead.toString());
 			throw new IOException();
 		}
-		finish = System.currentTimeMillis();
-        Log.i("receive X time: ", Long.valueOf(finish - start).toString());
-        start = System.currentTimeMillis();
         decoded = new String(buffer, 0, bytesRead -1, "UTF-8");
         X = new BigInteger(decoded, 16);
-        finish = System.currentTimeMillis();
-        Log.i("decode X time: ", Long.valueOf(finish - start).toString());
         
         /* generate big random value < p -1 */
-        start = System.currentTimeMillis();
         b = nextRandomBigInteger(P);
         finish = System.currentTimeMillis();
-        Log.i("next RandomBigInteger", Long.valueOf(finish - start).toString());
         
         /* y = g^b mod p */
         start = System.currentTimeMillis();
@@ -102,10 +86,7 @@ public class CryptSocket extends Socket {
         finish = System.currentTimeMillis();
         Log.i("setting y time:", Long.valueOf(finish - start).toString());
         
-        start = System.currentTimeMillis();
         osOriginal.write(yStr.getBytes());
-        finish = System.currentTimeMillis();
-        Log.i("sending y time:", Long.valueOf(finish - start).toString());
         
         /* k_b = x^b mod p */
         start = System.currentTimeMillis();
@@ -114,13 +95,11 @@ public class CryptSocket extends Socket {
         Log.i("setting key", Long.valueOf(finish - start).toString());
         
         try {
-        	start = System.currentTimeMillis();
         	is.setDhmKey(k_b);
         	is.initAES();
         	os.setDhmKey(k_b);
         	os.initAES(is.getSkeySpec(), is.getIVSpec());
         	finish = System.currentTimeMillis();
-        	Log.i("setting AES time", Long.valueOf(finish - start).toString());
         } catch (NoSuchAlgorithmException e) {
 			Log.e("initAES", "AES not found");
 			e.printStackTrace();

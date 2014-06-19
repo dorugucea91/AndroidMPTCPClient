@@ -40,6 +40,8 @@ public class CryptInputStream {
 	private int newPayloadSize, remainingSize, flag, offset;
 	private int bufSize, bufferedSize, transferredBytes, payloadSize, alignSize,
 	 			headerCleanSize;
+	private long recv_time, decryption_time, md5_time, trap_time, start, finish, 
+					start2, finish2;
 	
 	public CryptInputStream(Socket socket) {
 		this.socket = socket;
@@ -90,11 +92,11 @@ public class CryptInputStream {
 		this.inputStream = socket.getInputStream();
 	}
 	
-	public int read(byte[] b, int off, int len) throws IOException {
+	public int read1(byte[] b, int off, int len) throws IOException {
 		return inputStream.read(b, off, len);
 	}
 
-	public int read1(byte[] b, int off, int len) throws IOException {
+	public int read(byte[] b, int off, int len) throws IOException {
 		/* 0 bytes buffered => read from socket */
 		if (bufferedSize == 0) {
 			/* first receive of data*/
@@ -111,7 +113,10 @@ public class CryptInputStream {
 			}
 			
 			remainingSize = bufSize - flag * headerCleanSize;
+			start = System.currentTimeMillis();
 			ret = readAll(buf, 0, remainingSize, 1);
+			finish = System.currentTimeMillis();
+			recv_time += (finish - start);
 			if (ret == -1)
 				return ret;
 			bufferedSize = payloadSize - alignSize;
@@ -152,10 +157,16 @@ public class CryptInputStream {
 			}
 			flag = 0;
 			try {
+				start = System.currentTimeMillis();
 				cipher.doFinal(buf, offset, payloadSize, buf);
+				finish = System.currentTimeMillis();
+				decryption_time += (finish - start);
+				start = System.currentTimeMillis();
 				md.update(buf, 0, payloadSize);
 				if (Arrays.equals(md5Header, md.digest()) == false)
 					throw new IOException();
+				finish = System.currentTimeMillis();
+				md5_time += (finish - start);
 				} catch (BadPaddingException e) {
 					Log.e("decrypt", "Bad Padding");
 					e.printStackTrace();
@@ -186,7 +197,6 @@ public class CryptInputStream {
 		return ret;
 	}
 	
-	
 	private void setPayloadAlignSize(byte[] headerModified) throws IOException { 
 		String decoded = new String(Arrays.copyOfRange(headerModified, FLAG_SIZE, 
 											headerModifiedSize), "UTF-8");
@@ -206,6 +216,7 @@ public class CryptInputStream {
 	
 	private int readAll(byte[] b, int off, int totalSize, int checkLast) 
 			throws IOException {
+		start2 = System.currentTimeMillis();
 		int received = 0, realSize = 0, smallerBuf = 0;
 		ret = 0;
 		
@@ -218,6 +229,7 @@ public class CryptInputStream {
 					return ret;
 			}
 			ret += received;
+			
 			if ((checkLast == 1) && (ret > (FLAG_SIZE + PAYLOAD_SIZE))) {
 				if (b[0] == 0x31) {
 					String decoded = new String(Arrays.copyOfRange(b, FLAG_SIZE, 
@@ -236,14 +248,16 @@ public class CryptInputStream {
 					realSize += headerModifiedSize;
 					if (realSize < totalSize)
 						smallerBuf = 1;
-					checkLast = 0;
 				}
+				checkLast = 0;
 			}	
 			if ((smallerBuf == 1) && (realSize == ret)) {
-				socket.getOutputStream().write(0x00);
+				//socket.getOutputStream().write(0x00);
 				return ret;
 			}
-		}
+		}	
+		finish2 = System.currentTimeMillis();
+		trap_time += (finish2 - start2);
 		return ret;
 	}
 	
@@ -253,6 +267,14 @@ public class CryptInputStream {
 
 	public void close() throws IOException {
 		inputStream.close();
+		 
+	}
+	
+	public void disp() {
+		Log.i("recv time", Long.valueOf(recv_time).toString());
+		 Log.i("decryption time", Long.valueOf(decryption_time).toString());
+		 Log.i("md5 time", Long.valueOf(md5_time).toString());
+		 Log.i("trap time", Long.valueOf(trap_time).toString());
 	}
 
 	public SecretKeySpec getSkeySpec() {
