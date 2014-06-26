@@ -49,6 +49,15 @@ public class MainActivity extends Activity {
 		
 		buttonDownload.setEnabled(false);
 		buttonUpload.setEnabled(false);
+		
+		editTextAddress.setText("192.168.43.69");
+		editTextPort.setText("3000");
+		//int i;
+		//for (i = 0; i < 20; i++ ) {
+			//buttonConnect.performClick();
+			//buttonDownload.performClick();
+		//}
+		
 	}
 	
 	OnClickListener buttonConnectOnClickListener = 

@@ -42,11 +42,13 @@ public class CryptInputStream {
 	 			headerCleanSize;
 	private long recv_time, decryption_time, md5_time, trap_time, start, finish, 
 					start2, finish2;
+	private long m, encr;
+	private int i = 1;
 	
 	public CryptInputStream(Socket socket) {
 		this.socket = socket;
-		PAYLOAD_SIZE = 8;
-		ALIGN_SIZE = 8;
+		PAYLOAD_SIZE = 5;
+		ALIGN_SIZE = 2;
 		MD5_SIZE = 16;
 		FLAG_SIZE = 1;
 		MD5_OFFSET_M = FLAG_SIZE + PAYLOAD_SIZE + ALIGN_SIZE + MD5_SIZE;
@@ -198,20 +200,18 @@ public class CryptInputStream {
 	}
 	
 	private void setPayloadAlignSize(byte[] headerModified) throws IOException { 
-		String decoded = new String(Arrays.copyOfRange(headerModified, FLAG_SIZE, 
-											headerModifiedSize), "UTF-8");
-		scanner = new Scanner(decoded);
+		String  payloadSizeS = new String(Arrays.copyOfRange(headerModified, FLAG_SIZE, 
+				FLAG_SIZE + PAYLOAD_SIZE), "UTF-8");
+		String alignSizeS = new String(Arrays.copyOfRange(headerModified, FLAG_SIZE + PAYLOAD_SIZE, 
+				FLAG_SIZE + PAYLOAD_SIZE + ALIGN_SIZE), "UTF-8");
+		
+		payloadSizeS = payloadSizeS.replaceAll("[^\\x20-\\x7e]", "");
+		alignSizeS = alignSizeS.replaceAll("[^\\x20-\\x7e]", "");
+		Log.i("sizesS", payloadSizeS +  " " + alignSizeS);
 		/* get total size and align size */
-		try {
-			payloadSize = scanner.nextInt();
-			alignSize = scanner.nextInt();
-		} catch (InputMismatchException e) {
-			Log.e("header", "corrupt");
-			e.printStackTrace();
-			throw new IOException();
-		} finally {
-			scanner.close();
-		}
+		payloadSize = Integer.valueOf(payloadSizeS);
+		alignSize = Integer.valueOf(alignSizeS);
+		Log.i("sizes", Integer.valueOf(payloadSize).toString() + " " + Integer.valueOf(alignSize).toString());
 	}
 	
 	private int readAll(byte[] b, int off, int totalSize, int checkLast) 
@@ -232,18 +232,10 @@ public class CryptInputStream {
 			
 			if ((checkLast == 1) && (ret > (FLAG_SIZE + PAYLOAD_SIZE))) {
 				if (b[0] == 0x31) {
-					String decoded = new String(Arrays.copyOfRange(b, FLAG_SIZE, 
+					String realSizeS = new String(Arrays.copyOfRange(b, FLAG_SIZE, 
 							FLAG_SIZE + PAYLOAD_SIZE), "UTF-8");
-					scanner = new Scanner(decoded);
-					try {
-						realSize = scanner.nextInt();
-					} catch (InputMismatchException e) {
-						Log.e("header", "corrupt");
-						e.printStackTrace();
-						throw new IOException();
-					} finally {
-						scanner.close();
-					}
+					
+					realSize = Integer.valueOf(realSizeS.replaceAll("[^\\x20-\\x7e]", ""));
 					
 					realSize += headerModifiedSize;
 					if (realSize < totalSize)
@@ -271,10 +263,14 @@ public class CryptInputStream {
 	}
 	
 	public void disp() {
-		Log.i("recv time", Long.valueOf(recv_time).toString());
-		 Log.i("decryption time", Long.valueOf(decryption_time).toString());
-		 Log.i("md5 time", Long.valueOf(md5_time).toString());
-		 Log.i("trap time", Long.valueOf(trap_time).toString());
+		//Log.i("recv time", Long.valueOf(recv_time).toString());
+		 
+		 //Log.i("trap time", Long.valueOf(trap_time).toString());
+		 m += md5_time;
+		 encr += decryption_time;
+		 Log.i("decryption time", Long.valueOf(encr / i).toString());
+		 Log.i("md5 time", Long.valueOf(m / i).toString());
+		 i++;
 	}
 
 	public SecretKeySpec getSkeySpec() {
