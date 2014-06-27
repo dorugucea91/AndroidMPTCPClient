@@ -30,6 +30,8 @@ public class MainActivity extends Activity {
 	private CryptSocket clientSocket;
 	private CryptInputStream is;
 	private CryptOutputStream os;
+	private int cnt = 1;
+	static private long elapsed;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -51,12 +53,14 @@ public class MainActivity extends Activity {
 		buttonUpload.setEnabled(false);
 		
 		editTextAddress.setText("192.168.43.69");
-		editTextPort.setText("3000");
-		//int i;
-		//for (i = 0; i < 20; i++ ) {
-			//buttonConnect.performClick();
-			//buttonDownload.performClick();
-		//}
+		editTextPort.setText("3001");
+		int i;
+		CryptInputStream.reset();
+		elapsed = 0;
+		for (i = 0; i < 5; i++ ) {
+			buttonConnect.performClick();
+			buttonDownload.performClick();
+		}
 		
 	}
 	
@@ -147,7 +151,9 @@ public class MainActivity extends Activity {
 					}
 					stopTime = System.currentTimeMillis();
 				    elapsedTime = stopTime - startTime - writtenTime;
-				    Log.i("elapsed time", Long.valueOf(elapsedTime).toString());
+				    elapsed += elapsedTime;
+				    Log.i("totalTime", Long.valueOf(elapsed / cnt).toString());
+				    cnt++;
 				    is.close();
 				    is.disp();
 					response = "Download finished.";
@@ -309,7 +315,7 @@ public class MainActivity extends Activity {
 				start = System.currentTimeMillis();
 				clientSocket.connect(serverAddress);
 				finish = System.currentTimeMillis();
-				Log.i("connection time", Long.valueOf(finish-start).toString());
+				//Log.i("connection time", Long.valueOf(finish-start).toString());
 				is = clientSocket.getCryptInputStream();
 				os = clientSocket.getCryptOutputStream();
 				response = "Connected to server.";

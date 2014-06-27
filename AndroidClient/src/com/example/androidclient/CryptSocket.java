@@ -43,7 +43,7 @@ public class CryptSocket extends Socket {
 			throw new IOException();
 		}
 		finish = System.currentTimeMillis();
-		Log.i("receive P time: ", Long.valueOf(finish - start).toString());
+		//Log.i("receive P time: ", Long.valueOf(finish - start).toString());
 		
         decoded = new String(buffer, 0, bytesRead -1, "UTF-8");
         P = new BigInteger(decoded, 16);
@@ -84,7 +84,7 @@ public class CryptSocket extends Socket {
         y = G.modPow(b, P);
         yStr = y.toString(16);
         finish = System.currentTimeMillis();
-        Log.i("setting y time:", Long.valueOf(finish - start).toString());
+        //Log.i("setting y time:", Long.valueOf(finish - start).toString());
         
         osOriginal.write(yStr.getBytes());
         
@@ -92,7 +92,7 @@ public class CryptSocket extends Socket {
         start = System.currentTimeMillis();
         k_b = X.modPow(b, P);
         finish = System.currentTimeMillis();
-        Log.i("setting key", Long.valueOf(finish - start).toString());
+        //Log.i("setting key", Long.valueOf(finish - start).toString());
         
         try {
         	is.setDhmKey(k_b);
