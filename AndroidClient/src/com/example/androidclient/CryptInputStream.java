@@ -10,6 +10,8 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -40,8 +42,7 @@ public class CryptInputStream {
 	private int newPayloadSize, remainingSize, flag, offset;
 	private int bufSize, bufferedSize, transferredBytes, payloadSize, alignSize,
 	 			headerCleanSize;
-	private long recv_time, decryption_time, md5_time, trap_time, start, finish, 
-					start2, finish2;
+	private long recv_time, decryption_time, md5_time, start, finish;
 	static private long m, encr, r;
 	static private int i = 1;
 	
@@ -95,7 +96,13 @@ public class CryptInputStream {
 	}
 	
 	public int read1(byte[] b, int off, int len) throws IOException {
-		return inputStream.read(b, off, len);
+		int x;
+		start = System.currentTimeMillis();
+		x =  inputStream.read(b, off, len);
+		finish = System.currentTimeMillis();
+		recv_time += (finish - start);
+		return x;
+		
 	}
 
 	public int read(byte[] b, int off, int len) throws IOException {
@@ -163,6 +170,7 @@ public class CryptInputStream {
 				cipher.doFinal(buf, offset, payloadSize, buf);
 				finish = System.currentTimeMillis();
 				decryption_time += (finish - start);
+				
 				start = System.currentTimeMillis();
 				md.update(buf, 0, payloadSize);
 				if (Arrays.equals(md5Header, md.digest()) == false)
@@ -205,16 +213,19 @@ public class CryptInputStream {
 		String alignSizeS = new String(Arrays.copyOfRange(headerModified, FLAG_SIZE + PAYLOAD_SIZE, 
 				FLAG_SIZE + PAYLOAD_SIZE + ALIGN_SIZE), "UTF-8");
 		
-		payloadSizeS = payloadSizeS.replaceAll("[^\\x20-\\x7e]", "");
-		alignSizeS = alignSizeS.replaceAll("[^\\x20-\\x7e]", "");
 		/* get total size and align size */
-		payloadSize = Integer.valueOf(payloadSizeS);
-		alignSize = Integer.valueOf(alignSizeS);
+		try {
+			payloadSize = ((Number)NumberFormat.getInstance().parse(payloadSizeS)).intValue();
+			alignSize = ((Number)NumberFormat.getInstance().parse(alignSizeS)).intValue();
+		} catch (ParseException e) {
+			e.printStackTrace();
+			throw new IOException();
+		}
 	}
 	
 	private int readAll(byte[] b, int off, int totalSize, int checkLast) 
 			throws IOException {
-		start2 = System.currentTimeMillis();
+	
 		int received = 0, realSize = 0, smallerBuf = 0;
 		ret = 0;
 		
@@ -223,8 +234,10 @@ public class CryptInputStream {
 			if (received == -1) {
 				if (ret == 0)
 					return -1;
-				else
+				else {
+					
 					return ret;
+				}
 			}
 			ret += received;
 			
@@ -233,7 +246,13 @@ public class CryptInputStream {
 					String realSizeS = new String(Arrays.copyOfRange(b, FLAG_SIZE, 
 							FLAG_SIZE + PAYLOAD_SIZE), "UTF-8");
 					
-					realSize = Integer.valueOf(realSizeS.replaceAll("[^\\x20-\\x7e]", ""));
+					try {
+						realSize = ((Number)NumberFormat.getInstance().parse(realSizeS)).intValue();
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						Log.e("real", realSizeS);
+						throw new IOException();
+					}
 					
 					realSize += headerModifiedSize;
 					if (realSize < totalSize)
@@ -246,8 +265,7 @@ public class CryptInputStream {
 				return ret;
 			}
 		}	
-		finish2 = System.currentTimeMillis();
-		trap_time += (finish2 - start2);
+		
 		return ret;
 	}
 	
@@ -270,6 +288,7 @@ public class CryptInputStream {
 		 Log.i("md5 time", Long.valueOf(m / i).toString());
 		 Log.i("recv time", Long.valueOf(r / i).toString());
 		 i++;
+		 
 	}
 		
 	public static void reset() {

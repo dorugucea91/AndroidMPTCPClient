@@ -18,6 +18,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 
+import android.util.Log;
+
 public class CryptOutputStream {
 	private Socket socket;
 	private OutputStream outputStream;
@@ -30,8 +32,8 @@ public class CryptOutputStream {
 	
 	public CryptOutputStream(Socket socket) {
 		this.socket = socket;
-		PAYLOAD_SIZE = 5;
-		ALIGN_SIZE = 2;
+		PAYLOAD_SIZE = 8;
+		ALIGN_SIZE = 8;
 		MD5_SIZE = 16;
 		FLAG_SIZE = 1;
 		MD5_OFFSET_M = FLAG_SIZE + PAYLOAD_SIZE + ALIGN_SIZE + MD5_SIZE;

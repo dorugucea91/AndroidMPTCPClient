@@ -27,9 +27,9 @@ public class MainActivity extends Activity {
 	private TextView textResponse;
 	private EditText editTextAddress, editTextPort; 
 	private Button buttonConnect, buttonDownload, buttonUpload;
-	private CryptSocket clientSocket;
-	private CryptInputStream is;
-	private CryptOutputStream os;
+	private Socket clientSocket;
+	private InputStream is;
+	private OutputStream os;
 	private int cnt = 1;
 	static private long elapsed;
 	
@@ -52,16 +52,22 @@ public class MainActivity extends Activity {
 		buttonDownload.setEnabled(false);
 		buttonUpload.setEnabled(false);
 		
-		editTextAddress.setText("192.168.43.69");
-		editTextPort.setText("3001");
-		int i;
-		CryptInputStream.reset();
+		editTextAddress.setText("141.85.37.123");
+		editTextPort.setText("80");
+//		int i;
 		elapsed = 0;
-		for (i = 0; i < 5; i++ ) {
-			buttonConnect.performClick();
-			buttonDownload.performClick();
-		}
-		
+			
+//		for (i = 0; i < 1; i++ ) {
+//			buttonConnect.callOnClick();
+//			buttonDownload.callOnClick();
+//			if ((i % 30) == 0 )
+//				try {
+//					Thread.sleep(500);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//		}	
 	}
 	
 	OnClickListener buttonConnectOnClickListener = 
@@ -128,7 +134,7 @@ public class MainActivity extends Activity {
 	
 	public class DownloadFile extends AsyncTask<Void, Integer, Void> {
 		private String response;
-		private byte[] decrypted = new byte[8192];	
+		private byte[] deed = new byte[8192];	
 		private int bytesRead;
 		private byte start[] = new byte[1];
 		long startTime, stopTime, elapsedTime, start1, start2, writtenTime;
@@ -142,20 +148,22 @@ public class MainActivity extends Activity {
 					response = "Downloading...";
 					publishProgress(1);
 					startTime = System.currentTimeMillis();
-					while ((bytesRead = is.read(decrypted, 0, 8192)) != -1) {
-						//start1 = System.currentTimeMillis();
-						//String decoded = new String(decrypted, 0, bytesRead);
-						//writeToFile(decoded);
-						//start2 = System.currentTimeMillis();
-						//writtenTime += (start2 - start1);
+					while ((bytesRead = is.read(deed, 0, 8192)) != -1) {
+						start1 = System.currentTimeMillis();
+						String decoded = new String(deed, 0, bytesRead);
+						writeToFile(decoded);
+						start2 = System.currentTimeMillis();
+						writtenTime += (start2 - start1);
 					}
 					stopTime = System.currentTimeMillis();
 				    elapsedTime = stopTime - startTime - writtenTime;
 				    elapsed += elapsedTime;
-				    Log.i("totalTime", Long.valueOf(elapsed / cnt).toString());
+				    Log.i("download time", Long.valueOf(elapsed / cnt).toString());
 				    cnt++;
-				    is.close();
-				    is.disp();
+				    clientSocket.shutdownInput();
+				    clientSocket.shutdownOutput();
+				    clientSocket.close();
+				    //is.disp();
 					response = "Download finished.";
 					publishProgress(0);
 				} catch (UnknownHostException e) {
@@ -233,6 +241,8 @@ public class MainActivity extends Activity {
 					publishProgress(1);
 					sendFile(os);
 					os.close();
+					is.close();
+					clientSocket.close();
 					response = "Uploaded.";
 					publishProgress(0);
 				} catch (IOException e) {
@@ -269,21 +279,25 @@ public class MainActivity extends Activity {
 			super.onProgressUpdate(progress);
 		 }
 		
-		private String sendFile(CryptOutputStream os) throws IOException {
-			long start1, start2, elapsed = 0;
-			byte[] buf = new byte[5000];
+		private String sendFile(OutputStream os) throws IOException {
+			long start1, start2, elapsedTime = 0, stopTime, startTime, writtenTime = 0;
+			byte[] buf = new byte[8192];
 		    String ret = "";
 		    int bytesRead;
 		    try {
-		        InputStream inputStream = openFileInput("test");
+		        InputStream inputStream = openFileInput("config.txt");
+		        
 		        if ( inputStream != null ) {
-		            while ( (bytesRead = inputStream.read(buf, 0, 5000)) != -1) {
-		            	start1 = System.currentTimeMillis();
+		            while ( (bytesRead = inputStream.read(buf, 0, 8192)) != -1) {
+		                start1 = System.currentTimeMillis();
 		            	os.write(buf, 0, bytesRead);
-		            	start2 = System.currentTimeMillis();
-		            	elapsed += (start2 - start1);
+		            	 start2 = System.currentTimeMillis();
+		            	 elapsedTime += (start2 - start1);
 		            }
-		            Log.i("elapsed", Long.valueOf(elapsed).toString());
+		             
+				    elapsed += elapsedTime;
+				    Log.i("totalTime", Long.valueOf(elapsed / cnt).toString());
+				    cnt++;
 		            inputStream.close();
 		        }
 		    }
@@ -307,7 +321,7 @@ public class MainActivity extends Activity {
 		@Override
 		protected Void doInBackground(Void... arg0) {
 			SocketAddress serverAddress = new InetSocketAddress(dstAddress, dstPort);		
-			clientSocket  = new CryptSocket();
+			clientSocket  = new Socket();
 			long start, finish;
 			try {
 				response = "Connecting to server...";
@@ -315,23 +329,26 @@ public class MainActivity extends Activity {
 				start = System.currentTimeMillis();
 				clientSocket.connect(serverAddress);
 				finish = System.currentTimeMillis();
-				//Log.i("connection time", Long.valueOf(finish-start).toString());
-				is = clientSocket.getCryptInputStream();
-				os = clientSocket.getCryptOutputStream();
+				Log.i("connect time", Long.valueOf(finish-start).toString());
+				is = clientSocket.getInputStream();
+				os = clientSocket.getOutputStream();
 				response = "Connected to server.";
 				publishProgress(1);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 				response = "UnknownHostException: " + e.toString();
 				publishProgress(0);
+				System.exit(-1);
 			} catch (IOException e) {
 				e.printStackTrace();
 				response = "IOException: " + e.toString();
 				publishProgress(0);
+				System.exit(-1);
 			} catch (Exception e) {
 				e.printStackTrace();
 				response = "Exception: " + e.toString();
 				publishProgress(0);
+				System.exit(-1);
 			}
 			return null;
 		}
